@@ -1223,6 +1223,7 @@
           const video = card.querySelector('video');
           if (!video) return;
           if (i === activeIdx) {
+            video.currentTime = 0;
             video.play().catch(() => {});
           } else {
             video.pause();
