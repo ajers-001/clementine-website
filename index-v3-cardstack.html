@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clementine Health — AI-Powered Discharge Coordination</title>
+  <meta name="description" content="Predict discharge barriers on Day 1. Autonomously resolve prior auth, post-acute placement, and referral packets. Reduce length of stay and save millions.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #F57C20;
+      --orange-deep: #E8740C;
+      --orange-bright: #F5820D;
+      --orange-glow: rgba(245, 124, 32, 0.12);
+      --card-bg: #FDF0E2;
+      --cream: #FFFBF5;
+      --ink: #1a1a1a;
+      --ink-light: #555;
+      --ink-muted: #888;
+      --border: rgba(0,0,0,0.06);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── Grain overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.018;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 120px 0; }
+
+    /* ── Typography ── */
+    h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(2.75rem, 6vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+    }
+    h2 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+    }
+    .text-orange { color: var(--orange); }
+    .subtitle {
+      font-size: clamp(1.05rem, 1.4vw, 1.2rem);
+      color: var(--ink-light);
+      line-height: 1.7;
+      max-width: 540px;
+      font-weight: 400;
+    }
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--orange-deep);
+      background: var(--card-bg);
+      padding: 7px 16px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+    .label-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 15px 30px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .btn-primary {
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(245,124,32,0.3), 0 4px 16px rgba(245,124,32,0.2);
+    }
+    .btn-primary:hover {
+      background: var(--orange-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(245,124,32,0.3), 0 12px 28px rgba(245,124,32,0.2);
+    }
+    .btn-secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1.5px solid #e2e2e2;
+    }
+    .btn-secondary:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: var(--cream);
+    }
+    .btn-arrow svg {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+    .btn-arrow:hover svg { transform: translateX(3px); }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.4s;
+    }
+    .nav.scrolled { box-shadow: 0 1px 20px rgba(0,0,0,0.05); }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+    .wordmark {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--orange);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wordmark-icon {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .wordmark-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .nav-links { display: flex; align-items: center; gap: 36px; }
+    .nav-links a {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink-muted);
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 1.5px;
+      background: var(--orange);
+      transform: scaleX(0);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 1px;
+    }
+    .nav-links a:hover::after { transform: scaleX(1); }
+    .nav-cta { margin-left: 4px; }
+    .nav-cta .btn { padding: 10px 22px; font-size: 0.85rem; border-radius: 8px; }
+    .nav-cta .btn-primary { color: #fff !important; }
+    .mobile-toggle { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+    .mobile-toggle span { display: block; width: 20px; height: 1.5px; background: var(--ink); margin: 5px 0; border-radius: 2px; transition: all 0.3s; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 150px 0 60px;
+      position: relative;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120%;
+      height: 100%;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, var(--orange-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      text-align: center;
+      position: relative;
+    }
+    .hero .subtitle { margin: 24px auto 0; }
+    .hero-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Hero background band ── */
+    .hero-bg-band {
+      position: absolute;
+      bottom: 0;
+      left: -10%;
+      right: -10%;
+      height: 45%;
+      background: linear-gradient(180deg, #f0f1f3 0%, #e8e9eb 100%);
+      z-index: -1;
+    }
+
+    /* ── Hero Video Embed ── */
+    .hero-video-wrapper {
+      margin-top: 56px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-bottom: 40px;
+    }
+    .hero-video-frame {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 */
+      border-radius: 16px;
+      overflow: hidden;
+      background: #111;
+      box-shadow:
+        0 24px 80px rgba(0,0,0,0.10),
+        0 8px 32px rgba(0,0,0,0.06),
+        0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .hero-video-frame iframe,
+    .hero-video-frame video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .hero-video-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: #fff;
+      gap: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .hero-video-placeholder:hover {
+      background: linear-gradient(135deg, #222 0%, #333 100%);
+    }
+    .hero-video-play {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 30px rgba(245, 124, 32, 0.35);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hero-video-placeholder:hover .hero-video-play {
+      transform: scale(1.08);
+      box-shadow: 0 12px 40px rgba(245, 124, 32, 0.45);
+    }
+    .hero-video-play svg {
+      margin-left: 4px;
+    }
+    .hero-video-caption {
+      font-size: 0.85rem;
+      color: #aaa;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    /* (Barriers card CSS removed — replaced by video embed) */
+
+    /* ── Metrics Strip ── */
+    .metrics {
+      padding: 72px 0;
+      border-top: none;
+      border-bottom: none;
+      position: relative;
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+    .metrics::before {
+      display: none;
+    }
+    .metrics-inner {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      background: none;
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+    }
+    .metric {
+      background: #fff;
+      padding: 36px 24px;
+      text-align: center;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.03);
+      transform: translateY(0);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .metric:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.05);
+    }
+    .metric-value {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 2.25rem;
+      color: var(--orange);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .metric-label { font-size: 0.82rem; color: var(--ink-muted); font-weight: 500; }
+
+    /* ── Problem Section (Glide-style) ── */
+    .problems {
+      background: #f0f1f3;
+      position: relative;
+      overflow: hidden;
+    }
+    .problems-layout {
+      position: relative;
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .problems-statement {
+      text-align: center;
+      max-width: 700px;
+      position: relative;
+      z-index: 1;
+      padding: 0 24px;
+    }
+    .problems-statement h2 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.1;
+    }
+    .problems-statement h2 span {
+      font-weight: 400;
+      font-family: 'Instrument Serif', Georgia, serif;
+    }
+    .problems-statement h2 strong {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      color: var(--ink);
+    }
+    .problem-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      position: absolute;
+      z-index: 2;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s;
+      max-width: 380px;
+    }
+    .problem-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+    }
+    .problem-card-1 { top: 40px; left: 24px; }
+    .problem-card-2 { top: 40px; right: 24px; }
+    .problem-card-3 { bottom: 40px; left: 50%; transform: translateX(-50%); }
+    .problem-card-3:hover { transform: translateX(-50%) translateY(-4px); }
+    .problem-card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .problem-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--card-bg);
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .problem-card h3 { font-size: 0.95rem; font-weight: 600; }
+    .problem-card p { font-size: 0.8rem; color: #999; line-height: 1.45; margin-left: 58px; font-weight: 400; }
+
+    /* ── Features — Card Stack ── */
+    .section.features { padding-bottom: 0; }
+    .card-stack-wrapper {
+      position: relative;
+      margin-top: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 60px;
+    }
+    .card-stack-container {
+      position: relative;
+      width: 100%;
+      max-width: 1300px;
+      height: 624px;
+      perspective: 1200px;
+    }
+    /* Nav arrows */
+    .card-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      z-index: 10;
+    }
+    .card-nav:hover {
+      background: var(--orange);
+      border-color: var(--orange);
+      box-shadow: 0 4px 20px rgba(245,124,32,0.3);
+    }
+    .card-nav:hover svg { stroke: #fff; }
+    .card-nav svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--ink-light);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.25s ease;
+    }
+    .card-nav.prev { left: 0; }
+    .card-nav.next { right: 0; }
+    .card-nav.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .feature-card {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 48px;
+      align-items: center;
+      padding: 56px 64px;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.04);
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform, opacity;
+    }
+    /* Stack positioning — cards behind peek out */
+    .feature-card[data-index="0"] { z-index: 3; }
+    .feature-card[data-index="1"] { z-index: 2; transform: scale(0.95) translateY(28px); opacity: 0.7; }
+    .feature-card[data-index="2"] { z-index: 1; transform: scale(0.90) translateY(56px); opacity: 0.4; }
+    /* Active card state */
+    .feature-card.active { transform: scale(1) translateY(0); opacity: 1; z-index: 3; }
+    .feature-card.behind-1 { transform: scale(0.95) translateY(28px); opacity: 0.7; z-index: 2; }
+    .feature-card.behind-2 { transform: scale(0.90) translateY(56px); opacity: 0.4; z-index: 1; }
+    .feature-card.dismissed { transform: translateY(-120%) scale(0.9); opacity: 0; z-index: 0; pointer-events: none; }
+
+    /* Card dot indicators */
+    .card-dots {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 36px;
+      margin-bottom: 36px;
+      width: 100%;
+    }
+    .card-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ddd;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .card-dot.active {
+      background: var(--orange);
+      transform: scale(1.2);
+    }
+
+    .feature-content .label { margin-bottom: 14px; }
+    .feature-content h3 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .feature-content p { font-size: 0.95rem; color: #666; line-height: 1.65; margin-bottom: 20px; }
+    .feature-points { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .feature-points li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--ink-light);
+      line-height: 1.5;
+    }
+    .feature-check {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      background: var(--card-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .feature-check svg { width: 11px; height: 11px; }
+    .feature-visual {
+      background: none;
+      border-radius: 16px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: visible;
+    }
+    .feature-video {
+      width: 105%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+    .feature-visual::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      right: -20%;
+      width: 60%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(245,124,32,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Feature mock elements */
+    .feature-mock {
+      width: 100%;
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.03);
+      position: relative;
+    }
+    .feature-mock-title {
+      font-weight: 700;
+      font-size: 0.82rem;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #111;
+    }
+    .feature-mock-title svg { flex-shrink: 0; }
+    .feature-mock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .feature-mock-row:last-child { border-bottom: none; }
+    .feature-mock-label { font-size: 0.78rem; color: #aaa; font-weight: 500; }
+    .feature-mock-value { font-size: 0.82rem; font-weight: 600; }
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 100px;
+      letter-spacing: 0.01em;
+    }
+    .tag-green { background: #dcfce7; color: #16a34a; }
+    .tag-orange { background: var(--card-bg); color: var(--orange); }
+    .tag-blue { background: #dbeafe; color: #2563eb; }
+
+    /* Timeline mock */
+    .timeline-mock { width: 100%; }
+    .timeline-step {
+      display: flex;
+      gap: 16px;
+      padding-bottom: 16px;
+    }
+    .timeline-step:last-child { padding-bottom: 0; }
+    .timeline-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+    .timeline-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: #fff;
+      font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(245,124,32,0.25);
+    }
+    .timeline-line {
+      width: 2px;
+      flex: 1;
+      background: linear-gradient(to bottom, var(--orange), rgba(245,124,32,0.15));
+      margin-top: 4px;
+      border-radius: 1px;
+    }
+    .timeline-step:last-child .timeline-line { display: none; }
+    .timeline-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 18px;
+      flex: 1;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border: 1px solid #f0f0f0;
+    }
+    .timeline-content strong { font-size: 0.82rem; display: block; margin-bottom: 2px; color: #111; }
+    .timeline-content span { font-size: 0.72rem; color: #999; }
+
+    /* ── How It Works ── */
+    .how-it-works {
+      background: #fff;
+      position: relative;
+    }
+    .how-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .how-header .subtitle { margin: 16px auto 0; }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      position: relative;
+    }
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      top: 44px;
+      left: calc(16.67% + 12px);
+      right: calc(16.67% + 12px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--orange), rgba(245,124,32,0.2), var(--orange));
+      z-index: 0;
+    }
+    .step-card {
+      text-align: center;
+      padding: 0 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .step-number {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--orange);
+      color: var(--orange);
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+    .step-card h3 { margin-bottom: 10px; }
+    .step-card p { font-size: 0.88rem; color: #666; max-width: 280px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── CTA Section ── */
+    .cta-section {
+      background: var(--ink);
+      color: #fff;
+      text-align: center;
+      padding: 120px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120%;
+      height: 100%;
+      background: radial-gradient(ellipse 50% 60% at 50% 100%, rgba(245,124,32,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-section::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(245,124,32,0.3), transparent);
+    }
+    .cta-section h2 { color: #fff; margin-bottom: 16px; }
+    .cta-section .subtitle { color: #999; margin: 0 auto 40px; }
+    .cta-section .label { background: rgba(245,124,32,0.12); color: #F5820D; }
+    .cta-buttons { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .cta-section .btn-secondary { background: transparent; border-color: #444; color: #ccc; }
+    .cta-section .btn-secondary:hover { border-color: var(--orange); color: var(--orange); background: rgba(245,124,32,0.05); }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 48px 0 36px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-left .wordmark { margin-bottom: 6px; }
+    .footer-left p { font-size: 0.8rem; color: #bbb; }
+    .footer-links { display: flex; gap: 32px; }
+    .footer-links a { font-size: 0.85rem; color: #999; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--orange); }
+
+    /* ── Animations ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-d1 { transition-delay: 0.08s; }
+    .reveal-d2 { transition-delay: 0.16s; }
+    .reveal-d3 { transition-delay: 0.24s; }
+    .reveal-d4 { transition-delay: 0.32s; }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .problems-layout { min-height: auto; flex-direction: column; gap: 24px; padding: 0; }
+      .problem-card { position: relative; top: auto; left: auto; right: auto; bottom: auto; max-width: 100%; }
+      .problem-card-1, .problem-card-2, .problem-card-3 { position: relative; top: auto; left: auto; right: auto; bottom: auto; }
+      .problem-card-3 { transform: none; }
+      .problem-card-3:hover { transform: translateY(-4px); }
+      .problems-statement { order: -1; padding: 0; }
+      .feature-row, .feature-row.reverse { grid-template-columns: 1fr; direction: ltr; gap: 32px; }
+      .feature-card { grid-template-columns: 1fr; height: auto; padding: 32px 24px; }
+      .card-stack-spacer { height: 350vh; }
+      .card-stack-container { height: 600px; }
+      .steps-grid { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; }
+      .steps-grid::before { display: none; }
+      .metrics-inner { grid-template-columns: repeat(2, 1fr); }
+      .hero-video-wrapper { max-width: 800px; }
+    }
+    @media (max-width: 768px) {
+      .section { padding: 80px 0; }
+      .hero { padding: 120px 0 48px; }
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 68px;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,0.98);
+        backdrop-filter: blur(16px);
+        padding: 24px;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+        gap: 16px;
+      }
+      .nav-links.open .nav-cta { margin-left: 0; }
+      .mobile-toggle { display: block; }
+      .hero-buttons { flex-direction: column; align-items: stretch; max-width: 320px; margin-left: auto; margin-right: auto; }
+      .hero-buttons .btn { justify-content: center; }
+      .hero-video-wrapper { max-width: 100%; }
+      .feature-row { min-height: auto; padding: 40px 0; }
+      .feature-visual { min-height: 200px; padding: 0; }
+      .card-stack-container { height: 700px; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .footer-links { justify-content: center; }
+      .cta-section { padding: 80px 0; }
+      .cta-buttons { flex-direction: column; align-items: stretch; max-width: 280px; margin: 0 auto; }
+      .cta-buttons .btn { justify-content: center; }
+      .problem-card p { margin-left: 0; margin-top: 8px; }
+    }
+    @media (max-width: 480px) {
+      h1 { font-size: 2.25rem; }
+      .fc-grid { grid-template-columns: 1fr; }
+      .lp-table-row > :nth-child(3), .lp-table-row > :nth-child(4) { display: none; }
+      .metrics-inner { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ── -->
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="wordmark">
+        <span class="wordmark-icon"><img src="logo.png" alt="Clementine Health"></span>
+        Clementine Health
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#problems">Problem</a>
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <div class="nav-cta">
+          <a href="#cta" class="btn btn-primary btn-arrow">Book a Demo
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 1l7 6-7 6"/></svg>
+          </a>
+        </div>
+      </div>
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="reveal">
+        <span class="label"><span class="label-dot"></span> AI-Powered Discharge Coordination</span>
+      </div>
+      <h1 class="reveal reveal-d1">
+        Predict discharge barriers.<br>
+        <em class="text-orange" style="font-style: italic;">Resolve them autonomously.</em>
+      </h1>
+      <p class="subtitle reveal reveal-d2">
+        The AI agent that predicts discharge barriers on Day&nbsp;1 and resolves them right away — before they delay a single patient.
+      </p>
+      <div class="hero-buttons reveal reveal-d3">
+        <a href="#cta" class="btn btn-primary btn-arrow">Book a Demo
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 1l7 6-7 6"/></svg>
+        </a>
+        <a href="#demo-video" class="btn btn-secondary">See How It Works</a>
+      </div>
+
+      <!-- Video Embed -->
+      <div class="hero-bg-band"></div>
+      <div id="demo-video" class="hero-video-wrapper reveal reveal-d4">
+        <div class="hero-video-frame">
+          <video src="ClementineDemo.mp4" controls playsinline preload="metadata"></video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Problems ── -->
+  <section class="section problems" id="problems">
+    <div class="container">
+      <div class="problems-layout reveal">
+
+        <!-- Card 1: Top Left -->
+        <div class="problem-card problem-card-1">
+          <div class="problem-card-header">
+            <div class="problem-icon">
+              <svg width="22" height="22" fill="none" stroke="#F57C20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="3" y1="9" x2="19" y2="9"/><line x1="9" y1="19" x2="9" y2="9"/></svg>
+            </div>
+            <h3>You're Buried in Prior Auth Requests</h3>
+          </div>
+          <p>Insurance Approvals Take Days of Manual Back-and-Forth, Holding Up Patients Who Are Ready to Leave.</p>
+        </div>
+
+        <!-- Card 2: Top Right -->
+        <div class="problem-card problem-card-2">
+          <div class="problem-card-header">
+            <div class="problem-icon">
+              <svg width="22" height="22" fill="none" stroke="#F57C20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <h3>You're Placing Patients Reactively</h3>
+          </div>
+          <p>Discharge Planning Starts Too Late, Leaving Case Managers Scrambling for SNF Beds and Home Health at the Last Minute.</p>
+        </div>
+
+        <!-- Big Statement (center) -->
+        <div class="problems-statement">
+          <h2><span>Discharge should happen when patients are ready.</span> <strong>Not when the paperwork catches up.</strong></h2>
+        </div>
+
+        <!-- Card 3: Bottom Center -->
+        <div class="problem-card problem-card-3">
+          <div class="problem-card-header">
+            <div class="problem-icon">
+              <svg width="22" height="22" fill="none" stroke="#F57C20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="9.5"/><polyline points="11 5.5 11 11 14.5 13"/></svg>
+            </div>
+            <h3>Your Patients Are Staying Longer Than They Need To</h3>
+          </div>
+          <p>Avoidable Delays Are Costing Your Hospital Thousands per Bed-Day While Your Team Drowns in Coordination Work.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="section features" id="features">
+    <div class="container">
+      <div class="text-center reveal" style="text-align:center; margin-bottom: 16px;">
+        <span class="label">Features</span>
+        <h2>Everything discharge teams need.<br><em class="text-orange" style="font-style:italic;">Nothing they don't.</em></h2>
+      </div>
+      <div class="card-stack-wrapper">
+        <button class="card-nav prev disabled" id="cardPrev">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="card-nav next" id="cardNext">
+          <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+          <div class="card-stack-container" id="cardStack">
+
+            <!-- Card 1 -->
+            <div class="feature-card active" data-index="0">
+              <div class="feature-content">
+                <span class="label" style="font-size:0.7rem;padding:5px 12px;">Prediction</span>
+                <h3>Day 1 Barrier Prediction</h3>
+                <p>Our AI analyzes admission data in real-time to flag discharge barriers before they become bottlenecks.</p>
+                <ul class="feature-points">
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Integrated with Epic and all major EMRs</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Predicts insurance, placement, and equipment barriers</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Risk-scores every patient on admission</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Surfaces actionable alerts to your case management team</li>
+                </ul>
+              </div>
+              <div class="feature-visual">
+                <video src="Gif1.mp4" muted loop playsinline preload="metadata" class="autoplay-video feature-video"></video>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="feature-card behind-1" data-index="1">
+              <div class="feature-content">
+                <span class="label" style="font-size:0.7rem;padding:5px 12px;">Automation</span>
+                <h3>Autonomous Prior Authorization</h3>
+                <p>Clementine compiles and submits clinically complete prior auth packages — built to maximize approval rates and cut wait times by days.</p>
+                <ul class="feature-points">
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Auto-generates complete auth packages from the patient's chart</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Optimizes documentation to meet payer-specific approval criteria</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Navigates and submits directly through payer portals</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Tracks submission status so case managers don't have to follow up manually</li>
+                </ul>
+              </div>
+              <div class="feature-visual">
+                <video src="Gif3.mp4" muted loop playsinline preload="metadata" class="autoplay-video feature-video"></video>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="feature-card behind-2" data-index="2">
+              <div class="feature-content">
+                <span class="label" style="font-size:0.7rem;padding:5px 12px;">Placement</span>
+                <h3>Smart Post-Acute Placement</h3>
+                <p>Automatically match patients to the right post-acute setting — SNF, IRF, home health, or DME — and coordinate the handoff.</p>
+                <ul class="feature-points">
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Searches available beds across your SNF network</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Matches clinical needs to facility capabilities</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Auto-generates and sends referral packets</li>
+                  <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Tracks acceptance and rejection in real time</li>
+                </ul>
+              </div>
+              <div class="feature-visual">
+                <video src="Gif2.mp4" muted loop playsinline preload="metadata" class="autoplay-video feature-video"></video>
+              </div>
+            </div>
+
+          </div>
+      </div>
+      <div class="card-dots" id="cardDots">
+        <div class="card-dot active"></div>
+        <div class="card-dot"></div>
+        <div class="card-dot"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics">
+    <div class="container">
+      <div class="metrics-inner">
+        <div class="metric reveal">
+          <div class="metric-value">0.5–1.5 days</div>
+          <div class="metric-label">Avg LOS reduction</div>
+        </div>
+        <div class="metric reveal reveal-d1">
+          <div class="metric-value">17%</div>
+          <div class="metric-label">Decrease in re-admissions</div>
+        </div>
+        <div class="metric reveal reveal-d2">
+          <div class="metric-value">20+ hrs/wk</div>
+          <div class="metric-label">Saved via automations</div>
+        </div>
+        <div class="metric reveal reveal-d3">
+          <div class="metric-value">$2.4M</div>
+          <div class="metric-label">Annual savings per facility</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ── -->
+  <section class="section how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="how-header reveal">
+        <span class="label">How It Works</span>
+        <h2>Live in weeks. <em class="text-orange" style="font-style:italic;">Not months.</em></h2>
+        <p class="subtitle" style="margin:16px auto 0;">Clementine plugs into your existing EHR infrastructure with zero workflow disruption.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card reveal reveal-d1">
+          <div class="step-number">1</div>
+          <h3>Connect your EHR</h3>
+          <p>Native Epic integration via FHIR APIs. We configure the connection, you approve it.</p>
+        </div>
+        <div class="step-card reveal reveal-d2">
+          <div class="step-number">2</div>
+          <h3>AI learns your patterns</h3>
+          <p>Clementine analyzes historical discharge data to calibrate predictions for your facility.</p>
+        </div>
+        <div class="step-card reveal reveal-d3">
+          <div class="step-number">3</div>
+          <h3>Start resolving barriers</h3>
+          <p>Your team gets Day 1 alerts. Clementine handles prior auth, placement, and referrals autonomously.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Metrics ── -->
+  <!-- ── CTA ── -->
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <span class="label reveal"><span class="label-dot"></span> Get Started</span>
+      <h2 class="reveal reveal-d1">Ready to cut length of stay<br><em style="font-style:italic;">and reclaim your team's time?</em></h2>
+      <p class="subtitle reveal reveal-d2">See how Clementine can save your facility millions while reducing discharge delays. Book a 30-minute demo with our team.</p>
+      <div class="cta-buttons reveal reveal-d3">
+        <a href="https://calendly.com/ajers-uchicago/clementine-demo" target="_blank" rel="noopener" class="btn btn-primary btn-arrow">Book a Demo
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 1l7 6-7 6"/></svg>
+        </a>
+        <a href="mailto:ajer@iclementine.com" class="btn btn-secondary">Contact Us</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <span class="wordmark">
+          <span class="wordmark-icon"><img src="logo.png" alt="Clementine Health"></span>
+          Clementine Health
+        </span>
+        <p>&copy; 2026 Clementine Health, Inc. All rights reserved.</p>
+      </div>
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="mailto:ajer@iclementine.com">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll-triggered reveals
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Nav scroll effect
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 10);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+
+    // Mobile menu
+    const toggle = document.getElementById('mobileToggle');
+    const navLinks = document.getElementById('navLinks');
+    toggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+
+    // Smooth anchor offset for fixed nav
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          const offset = 80;
+          const y = target.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Autoplay videos on scroll into view, pause when out of view
+    const videoObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const video = entry.target;
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.autoplay-video').forEach(v => videoObserver.observe(v));
+
+    // Card stack click navigation
+    (function() {
+      const cards = document.querySelectorAll('.feature-card');
+      const dots = document.querySelectorAll('.card-dot');
+      const prevBtn = document.getElementById('cardPrev');
+      const nextBtn = document.getElementById('cardNext');
+      if (!cards.length) return;
+
+      const totalCards = cards.length;
+      let currentIndex = 0;
+
+      function updateStack(activeIdx) {
+        currentIndex = activeIdx;
+
+        cards.forEach((card, i) => {
+          card.classList.remove('active', 'behind-1', 'behind-2', 'dismissed');
+          const diff = i - activeIdx;
+          if (diff === 0) card.classList.add('active');
+          else if (diff === 1) card.classList.add('behind-1');
+          else if (diff === 2) card.classList.add('behind-2');
+          else if (diff > 2) card.classList.add('behind-2');
+          else if (diff < 0) card.classList.add('dismissed');
+        });
+
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('active', i === activeIdx);
+        });
+
+        // Update arrow states
+        prevBtn.classList.toggle('disabled', activeIdx === 0);
+        nextBtn.classList.toggle('disabled', activeIdx === totalCards - 1);
+
+        // Play video on active card, pause others
+        cards.forEach((card, i) => {
+          const video = card.querySelector('video');
+          if (!video) return;
+          if (i === activeIdx) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+      }
+
+      prevBtn.addEventListener('click', () => {
+        if (currentIndex > 0) updateStack(currentIndex - 1);
+      });
+      nextBtn.addEventListener('click', () => {
+        if (currentIndex < totalCards - 1) updateStack(currentIndex + 1);
+      });
+
+      // Allow dot clicks too
+      dots.forEach((dot, i) => {
+        dot.style.cursor = 'pointer';
+        dot.addEventListener('click', () => updateStack(i));
+      });
+
+      updateStack(0);
+    })();
+  </script>
+</body>
+</html>
