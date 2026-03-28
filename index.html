@@ -812,9 +812,22 @@
       .problem-card-3:hover { transform: translateY(-4px); }
       .problems-statement { order: -1; padding: 0; }
       .feature-row, .feature-row.reverse { grid-template-columns: 1fr; direction: ltr; gap: 32px; }
-      .feature-card { grid-template-columns: 1fr; height: auto; padding: 32px 24px; }
+      .card-nav { width: auto; height: auto; background: none; border: none; box-shadow: none; border-radius: 0; }
+      .card-nav:hover { background: none; border-color: transparent; box-shadow: none; }
+      .card-nav:hover svg { stroke: var(--orange); }
+      .card-nav svg { width: 24px; height: 24px; stroke: var(--ink-muted); }
+      .feature-card.behind-1 { transform: scale(0.96) translateY(20px); opacity: 0.7; }
+      .feature-card.behind-2 { transform: scale(0.91) translateY(40px); opacity: 0.5; }
+      .card-stack-wrapper { padding: 0 40px; margin-top: 32px; }
+      .feature-card { grid-template-columns: 1fr; height: 460px; padding: 24px 20px; gap: 16px; overflow: hidden; }
+      .feature-points { display: none; }
+      .feature-content p { margin-bottom: 0; font-size: 0.88rem; }
+      .feature-content h3 { font-size: 1.5rem; margin-bottom: 6px; }
+      .feature-content .label { margin-bottom: 8px; }
+      .feature-visual { min-height: 0; padding: 0; }
+      .feature-video { width: 100%; border-radius: 10px; }
       .card-stack-spacer { height: 350vh; }
-      .card-stack-container { height: 600px; }
+      .card-stack-container { height: 510px; }
       .steps-grid { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; }
       .steps-grid::before { display: none; }
       .metrics-inner { grid-template-columns: repeat(2, 1fr); }
@@ -844,8 +857,11 @@
       .hero-buttons .btn { justify-content: center; }
       .hero-video-wrapper { max-width: 100%; }
       .feature-row { min-height: auto; padding: 40px 0; }
-      .feature-visual { min-height: 200px; padding: 0; }
-      .card-stack-container { height: 700px; }
+      .card-stack-wrapper { padding: 0 24px; }
+      .feature-card { padding: 20px 16px; gap: 14px; height: 440px; }
+      .feature-visual { min-height: 0; padding: 0; }
+      .feature-video { width: 100%; }
+      .card-stack-container { height: 500px; }
       .footer-inner { flex-direction: column; text-align: center; }
       .footer-links { justify-content: center; }
       .cta-section { padding: 80px 0; }
@@ -1002,7 +1018,7 @@
               <div class="feature-content">
                 <span class="label" style="font-size:0.7rem;padding:5px 12px;">Automation</span>
                 <h3>Autonomous Prior Authorization</h3>
-                <p>Clementine compiles and submits clinically complete prior auth packages — built to maximize approval rates and cut wait times by days.</p>
+                <p>Clementine compiles and submits complete prior auth packets built to maximize approvals and cut wait times by days.</p>
                 <ul class="feature-points">
                   <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Auto-generates complete auth packages from the patient's chart</li>
                   <li><span class="feature-check"><svg fill="none" stroke="#F57C20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg></span>Optimizes documentation to meet payer-specific approval criteria</li>
