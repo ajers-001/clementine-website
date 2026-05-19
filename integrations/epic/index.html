@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clementine Epic Integration Documentation | Clementine Health</title>
+  <meta name="description" content="Public documentation for the Clementine Health integration with Epic. Describes intended users, intended purpose, Epic/FHIR data accessed, AI use, authorization, privacy and security, and support contacts.">
+  <meta name="keywords" content="Clementine Health, Epic integration, Epic on FHIR, FHIR, discharge coordination, public documentation, hospital, care coordination, HIPAA, healthcare privacy">
+  <link rel="canonical" href="https://clementinehealth.app/integrations/epic/">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#F57C20">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Clementine Health">
+  <meta property="og:title" content="Clementine Epic Integration Documentation">
+  <meta property="og:description" content="Public documentation for the Clementine Health integration with Epic, covering intended use, data categories, privacy, and contact.">
+  <meta property="og:url" content="https://clementinehealth.app/integrations/epic/">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Clementine Epic Integration Documentation">
+  <meta name="twitter:description" content="Public documentation for the Clementine Health integration with Epic.">
+
+  <link rel="icon" href="../../logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Inlined shared styles from blog.css ── */
+    :root {
+      --orange: #F57C20;
+      --orange-deep: #E8740C;
+      --orange-bright: #F5820D;
+      --orange-glow: rgba(245, 124, 32, 0.12);
+      --card-bg: #FDF0E2;
+      --cream: #FFFBF5;
+      --ink: #1a1a1a;
+      --ink-light: #555;
+      --ink-muted: #888;
+      --border: rgba(0,0,0,0.06);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: clip; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.6;
+      overflow-x: clip;
+      font-feature-settings: "cv11", "ss01";
+    }
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--orange-deep);
+      background: var(--card-bg);
+      padding: 7px 16px;
+      border-radius: 100px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 15px 30px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-primary {
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(245,124,32,0.3), 0 4px 16px rgba(245,124,32,0.2);
+    }
+    .btn-primary:hover {
+      background: var(--orange-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(245,124,32,0.3), 0 12px 28px rgba(245,124,32,0.2);
+    }
+    .btn-arrow svg { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0; }
+    .btn-arrow:hover svg { transform: translateX(3px); }
+
+    /* Nav */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.4s;
+    }
+    .nav.scrolled { box-shadow: 0 1px 20px rgba(0,0,0,0.05); }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+    .wordmark {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--orange);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wordmark-icon {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--orange);
+    }
+    .wordmark-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .wordmark-icon svg { width: 100%; height: 100%; }
+    .nav-links { display: flex; align-items: center; gap: 36px; }
+    .nav-links a {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink-muted);
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--ink); }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 1.5px;
+      background: var(--orange);
+      transform: scaleX(0);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 1px;
+    }
+    .nav-links a:hover::after, .nav-links a.active::after { transform: scaleX(1); }
+    .nav-cta { margin-left: 4px; }
+    .nav-cta .btn { padding: 10px 22px; font-size: 0.85rem; border-radius: 8px; }
+    .nav-cta .btn-primary { color: #fff !important; }
+    .mobile-toggle { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+    .mobile-toggle span { display: block; width: 20px; height: 1.5px; background: var(--ink); margin: 5px 0; border-radius: 2px; transition: all 0.3s; }
+
+    .footer { padding: 0; border-top: 1px solid #f0f0f0; }
+
+    /* ── Page-specific: docs layout ── */
+
+    .docs-hero {
+      padding: 140px 0 36px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    .docs-hero-inner { max-width: 880px; margin: 0 auto; }
+    .docs-hero .label {
+      background: #FDF0E2;
+      color: var(--orange-deep);
+      margin-bottom: 22px;
+    }
+    .docs-hero h1 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: clamp(1.65rem, 2.6vw, 2.15rem);
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.015em;
+      margin-bottom: 16px;
+      color: var(--ink);
+    }
+    .docs-hero .lede {
+      font-size: 1.02rem;
+      line-height: 1.6;
+      color: var(--ink-light);
+      max-width: 720px;
+      letter-spacing: 0;
+    }
+    .docs-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .docs-meta .pill {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #555;
+      background: #f6f6f6;
+      border: 1px solid #ececec;
+      padding: 6px 12px;
+      border-radius: 100px;
+    }
+    .docs-meta .pill strong {
+      color: var(--ink);
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    /* ── Docs layout: sidebar TOC + body ── */
+    .docs-shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 56px 24px 96px;
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 64px;
+      align-items: start;
+    }
+    .docs-toc {
+      position: sticky;
+      top: 96px;
+      align-self: start;
+      font-size: 0.85rem;
+    }
+    .docs-toc h4 {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 14px;
+    }
+    .docs-toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-left: 1px solid #ececec;
+    }
+    .docs-toc li { padding: 0; }
+    .docs-toc a {
+      display: block;
+      padding: 8px 0 8px 16px;
+      margin-left: -1px;
+      border-left: 2px solid transparent;
+      color: var(--ink-light);
+      line-height: 1.4;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .docs-toc a:hover { color: var(--ink); }
+    .docs-toc a.active {
+      color: var(--orange-deep);
+      border-left-color: var(--orange);
+      font-weight: 600;
+    }
+
+    .docs-body {
+      max-width: 720px;
+      font-size: 0.98rem;
+      line-height: 1.7;
+      color: #2a2a2a;
+      letter-spacing: 0;
+    }
+    .docs-body section { scroll-margin-top: 88px; }
+    .docs-body section + section { margin-top: 56px; }
+    .docs-body h2 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 600;
+      font-size: 1.25rem;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #ececec;
+    }
+    .docs-body p { margin: 0 0 1em; color: #2a2a2a; }
+    .docs-body p:last-child { margin-bottom: 0; }
+    .docs-body strong { color: var(--ink); font-weight: 600; }
+    .docs-body ul {
+      list-style: disc;
+      padding-left: 1.4em;
+      margin: 0 0 1em;
+    }
+    .docs-body ul li {
+      padding: 4px 0;
+      color: #2a2a2a;
+    }
+    .docs-body ul li::marker { color: var(--orange); }
+    .docs-body ul.user-list li,
+    .docs-body ul.data-list li { font-size: 0.98rem; }
+
+    .docs-note {
+      background: #fafafa;
+      border: 1px solid #ececec;
+      border-left: 3px solid var(--orange);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 24px 0 0;
+      font-size: 0.94rem;
+      color: var(--ink-light);
+      line-height: 1.6;
+    }
+    .docs-note-label {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--orange-deep);
+      margin-bottom: 6px;
+    }
+    .docs-note p { margin: 0; color: var(--ink-light); }
+
+    .contact-card {
+      background: #fafafa;
+      border: 1px solid #ececec;
+      border-radius: 14px;
+      padding: 26px 28px;
+      margin-top: 8px;
+    }
+    .contact-card .contact-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #ececec;
+      font-size: 0.96rem;
+    }
+    .contact-card .contact-row:first-child { padding-top: 0; }
+    .contact-card .contact-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .contact-card .contact-label {
+      min-width: 150px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .contact-card a {
+      color: var(--orange-deep);
+      border-bottom: 1px solid rgba(245,124,32,0.3);
+      transition: border-color 0.15s;
+    }
+    .contact-card a:hover { border-color: var(--orange); }
+
+    .docs-footer-meta {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid #f0f0f0;
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+    }
+
+    /* Updated footer */
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 48px;
+      padding: 56px 0 32px;
+    }
+    .footer-grid .footer-col h5 {
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 14px;
+    }
+    .footer-grid .footer-col ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-grid .footer-col a {
+      font-size: 0.9rem;
+      color: #666;
+      transition: color 0.15s;
+    }
+    .footer-grid .footer-col a:hover { color: var(--orange); }
+    .footer-grid .footer-brand p {
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      max-width: 280px;
+      margin-top: 10px;
+      line-height: 1.55;
+    }
+    .footer-bottom {
+      border-top: 1px solid #f0f0f0;
+      padding: 20px 0;
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .docs-shell {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 40px 20px 72px;
+      }
+      .docs-toc {
+        position: static;
+        border: 1px solid #ececec;
+        border-radius: 12px;
+        padding: 18px 20px;
+      }
+      .docs-toc ol { border-left: none; }
+      .docs-toc a {
+        padding: 6px 0;
+        margin-left: 0;
+        border-left: none;
+      }
+      .docs-toc a.active {
+        border-left: none;
+        color: var(--orange-deep);
+      }
+      .docs-hero { padding: 120px 0 28px; }
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="../../index.html" class="wordmark">
+        <span class="wordmark-icon"><svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="21" cy="22" r="14" fill="#F57C20"/><path d="M21 8 Q22 4 25 3 Q23 6 22 9" fill="#3a7a3a"/></svg></span>
+        Clementine Health
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="../../index.html#problems">Problem</a>
+        <a href="../../index.html#features">Features</a>
+        <a href="../../index.html#how-it-works">How It Works</a>
+        <a href="../../blog/index.html">Blog</a>
+        <div class="nav-cta">
+          <a href="https://calendly.com/ajers-uchicago/clementine-demo" target="_blank" rel="noopener" class="btn btn-primary btn-arrow">Book a Demo
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 1l7 6-7 6"/></svg>
+          </a>
+        </div>
+      </div>
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="docs-hero">
+    <div class="container docs-hero-inner">
+      <span class="label">Integration Documentation</span>
+      <h1>Clementine Epic Integration Documentation</h1>
+      <p class="lede">Clementine is an AI-assisted discharge coordination platform that helps clinical and administrative teams identify discharge barriers earlier and coordinate post-acute care, durable medical equipment, and insurance authorization workflows.</p>
+      <div class="docs-meta">
+        <span class="pill"><strong>Status:</strong> Public</span>
+        <span class="pill"><strong>Last updated:</strong> May 2026</span>
+        <span class="pill"><strong>Audience:</strong> Health system IT, security, and compliance reviewers</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Docs body -->
+  <div class="docs-shell">
+
+    <aside class="docs-toc" aria-label="On this page">
+      <h4>On this page</h4>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#intended-users">Intended users</a></li>
+        <li><a href="#intended-purpose">Intended purpose</a></li>
+        <li><a href="#data-used">Epic / FHIR data used</a></li>
+        <li><a href="#how-we-use-data">How Clementine uses this data</a></li>
+        <li><a href="#ai-use">AI use</a></li>
+        <li><a href="#privacy-security">Privacy and security</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </aside>
+
+    <main class="docs-body">
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>Clementine helps hospitals and care teams reduce avoidable discharge delays by identifying discharge barriers earlier in the admission and coordinating the operational steps required for safe and timely discharge.</p>
+        <p>The platform analyzes relevant patient information from Epic through authorized FHIR-based access and supports both clinical teams and administrative teams, including case managers, discharge planners, care coordinators, social workers, utilization management, and hospital operations leaders, as they coordinate post-acute services, DME needs, insurance authorization steps, and care transition tasks.</p>
+      </section>
+
+      <section id="intended-users">
+        <h2>Intended users</h2>
+        <p>Clementine is designed for use by authorized healthcare personnel involved in discharge planning and care coordination, including:</p>
+        <ul class="user-list">
+          <li>Case managers</li>
+          <li>Discharge planners</li>
+          <li>Care coordinators</li>
+          <li>Social workers</li>
+          <li>Utilization management teams</li>
+          <li>Clinical care teams</li>
+          <li>Hospital operations and administrative leaders</li>
+        </ul>
+      </section>
+
+      <section id="intended-purpose">
+        <h2>Intended purpose</h2>
+        <p>Clementine supports clinical and administrative discharge coordination workflows. The platform is intended to help authorized care teams identify likely discharge barriers, organize required tasks, and coordinate post-acute care services before a patient is medically ready for discharge.</p>
+        <p>Clementine is not a replacement for clinical judgment. Final discharge decisions, medical decisions, and care plan decisions remain with the patient&rsquo;s licensed care team.</p>
+      </section>
+
+      <section id="data-used">
+        <h2>Epic / FHIR data used</h2>
+        <p>With appropriate authorization, Clementine may access the following categories of Epic FHIR data to support discharge coordination workflows:</p>
+        <ul class="data-list">
+          <li>Patient demographics</li>
+          <li>Encounters</li>
+          <li>Conditions and problems</li>
+          <li>Encounter diagnoses</li>
+          <li>Allergies</li>
+          <li>Medication orders</li>
+          <li>Laboratory results</li>
+          <li>Vital signs</li>
+          <li>Diagnostic reports</li>
+          <li>Care plans</li>
+          <li>Care team information</li>
+          <li>Service requests and referrals</li>
+          <li>Procedures</li>
+          <li>Clinical notes and document references</li>
+          <li>Patient insurance and coverage information</li>
+          <li>Tasks and episode checklists</li>
+          <li>Practitioner, organization, and location directory information</li>
+        </ul>
+        <aside class="docs-note" aria-label="Minimum necessary">
+          <span class="docs-note-label">Minimum necessary</span>
+          <p>Clementine requests access only to data categories needed to support discharge planning, care coordination, post-acute placement, DME coordination, insurance authorization preparation, and related operational workflows.</p>
+        </aside>
+      </section>
+
+      <section id="how-we-use-data">
+        <h2>How Clementine uses this data</h2>
+        <p>Clementine uses authorized patient data to help care teams:</p>
+        <ul>
+          <li>Identify likely barriers to discharge earlier in the admission</li>
+          <li>Surface missing discharge planning steps</li>
+          <li>Track post-acute placement needs</li>
+          <li>Coordinate DME requirements such as home oxygen or mobility equipment</li>
+          <li>Support insurance authorization preparation</li>
+          <li>Organize care transition tasks across the discharge workflow</li>
+          <li>Provide care teams with a clearer view of discharge readiness</li>
+        </ul>
+      </section>
+
+      <section id="ai-use">
+        <h2>AI use</h2>
+        <p>Clementine uses AI to help summarize relevant discharge information, identify potential coordination barriers, and support care team workflows. AI-generated outputs are intended to assist authorized users and should be reviewed by appropriate healthcare personnel.</p>
+        <p>Clementine does not replace clinician judgment, independently diagnose patients, prescribe treatment, or make final discharge decisions.</p>
+      </section>
+
+      <section id="privacy-security">
+        <h2>Privacy and security</h2>
+        <p>Clementine is designed to support healthcare privacy and security requirements in applicable health system implementations. The platform follows principles of least-privilege access, encrypted data transmission, access control, auditability, and secure handling of protected health information.</p>
+        <p>Clementine is designed to support HIPAA-aligned healthcare workflows.</p>
+        <p>Clementine accesses Epic/FHIR data only after the applicable health system has authorized the integration and approved the relevant scopes.</p>
+        <p>Clementine does not sell patient data or use patient data for advertising.</p>
+        <p>Access to patient information is limited to authorized workflows and authorized users based on the applicable health system implementation.</p>
+      </section>
+
+      <section id="contact">
+        <h2>Contact</h2>
+        <p>For implementation, support, privacy, or security questions, please contact:</p>
+        <div class="contact-card">
+          <div class="contact-row">
+            <span class="contact-label">Security</span>
+            <a href="mailto:security@iclementine.com">security@iclementine.com</a>
+          </div>
+        </div>
+      </section>
+
+      <p class="docs-footer-meta">Last updated: May 2026</p>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <span class="wordmark">
+            <span class="wordmark-icon"><svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="21" cy="22" r="14" fill="#F57C20"/><path d="M21 8 Q22 4 25 3 Q23 6 22 9" fill="#3a7a3a"/></svg></span>
+            Clementine Health
+          </span>
+          <p>AI-powered discharge coordination for hospitals and care teams.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../blog/index.html">Blog</a></li>
+            <li><a href="mailto:security@iclementine.com">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Resources</h5>
+          <ul>
+            <li><a href="../../integrations/epic/">Epic Integration</a></li>
+            <li><a href="mailto:security@iclementine.com">Security</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; 2026 Clementine Health, Inc. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Nav scroll shadow
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 10);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+
+    // Mobile menu
+    const toggle = document.getElementById('mobileToggle');
+    const navLinks = document.getElementById('navLinks');
+    toggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+
+    // TOC active-section highlighting + explicit click-to-jump
+    const tocLinks = document.querySelectorAll('.docs-toc a');
+    const sections = document.querySelectorAll('.docs-body section[id]');
+    const byId = {};
+    tocLinks.forEach(a => { byId[a.getAttribute('href').slice(1)] = a; });
+
+    const setActive = (id) => {
+      tocLinks.forEach(a => a.classList.remove('active'));
+      if (byId[id]) byId[id].classList.add('active');
+    };
+
+    // Explicit smooth-scroll on click — works even when hash navigation
+    // is intercepted (e.g. preview iframes).
+    tocLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        const id = link.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (!target) return;
+        e.preventDefault();
+        const y = target.getBoundingClientRect().top + window.scrollY - 88;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+        history.replaceState(null, '', '#' + id);
+        setActive(id);
+      });
+    });
+
+    const tocObserver = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(e => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (visible.length) setActive(visible[0].target.id);
+    }, { rootMargin: '-96px 0px -60% 0px', threshold: 0 });
+
+    sections.forEach(s => tocObserver.observe(s));
+  </script>
+</body>
+</html>
