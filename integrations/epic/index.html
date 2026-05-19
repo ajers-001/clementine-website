@@ -25,7 +25,7 @@
   <link rel="icon" href="../../logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* ── Inlined shared styles from blog.css ── */
@@ -119,11 +119,11 @@
       height: 68px;
     }
     .wordmark {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 1.15rem;
-      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
       color: var(--orange);
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -167,7 +167,23 @@
     .mobile-toggle { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
     .mobile-toggle span { display: block; width: 20px; height: 1.5px; background: var(--ink); margin: 5px 0; border-radius: 2px; transition: all 0.3s; }
 
-    .footer { padding: 0; border-top: 1px solid #f0f0f0; }
+    /* Footer — matches the rest of the site */
+    .footer {
+      padding: 48px 0 36px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-left .wordmark { margin-bottom: 6px; }
+    .footer-left p { font-size: 0.8rem; color: #bbb; }
+    .footer-links { display: flex; gap: 32px; }
+    .footer-links a { font-size: 0.85rem; color: #999; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--orange); }
 
     /* ── Page-specific: docs layout ── */
 
@@ -362,49 +378,6 @@
       color: var(--ink-muted);
     }
 
-    /* Updated footer */
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
-      gap: 48px;
-      padding: 56px 0 32px;
-    }
-    .footer-grid .footer-col h5 {
-      font-size: 0.74rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      margin-bottom: 14px;
-    }
-    .footer-grid .footer-col ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .footer-grid .footer-col a {
-      font-size: 0.9rem;
-      color: #666;
-      transition: color 0.15s;
-    }
-    .footer-grid .footer-col a:hover { color: var(--orange); }
-    .footer-grid .footer-brand p {
-      font-size: 0.85rem;
-      color: var(--ink-muted);
-      max-width: 280px;
-      margin-top: 10px;
-      line-height: 1.55;
-    }
-    .footer-bottom {
-      border-top: 1px solid #f0f0f0;
-      padding: 20px 0;
-      font-size: 0.8rem;
-      color: var(--ink-muted);
-    }
-
     /* Responsive */
     @media (max-width: 900px) {
       .docs-shell {
@@ -429,10 +402,8 @@
         color: var(--orange-deep);
       }
       .docs-hero { padding: 120px 0 28px; }
-      .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 32px;
-      }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .footer-links { justify-content: center; flex-wrap: wrap; gap: 20px; }
     }
   </style>
 </head>
@@ -442,7 +413,7 @@
   <nav class="nav" id="nav">
     <div class="container nav-inner">
       <a href="../../index.html" class="wordmark">
-        <span class="wordmark-icon"><svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="21" cy="22" r="14" fill="#F57C20"/><path d="M21 8 Q22 4 25 3 Q23 6 22 9" fill="#3a7a3a"/></svg></span>
+        <span class="wordmark-icon"><img src="../../logo.png" alt="Clementine Health"></span>
         Clementine Health
       </a>
       <div class="nav-links" id="navLinks">
@@ -596,33 +567,19 @@
 
   <!-- Footer -->
   <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col footer-brand">
-          <span class="wordmark">
-            <span class="wordmark-icon"><svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="21" cy="22" r="14" fill="#F57C20"/><path d="M21 8 Q22 4 25 3 Q23 6 22 9" fill="#3a7a3a"/></svg></span>
-            Clementine Health
-          </span>
-          <p>AI-powered discharge coordination for hospitals and care teams.</p>
-        </div>
-        <div class="footer-col">
-          <h5>Company</h5>
-          <ul>
-            <li><a href="../../index.html">Home</a></li>
-            <li><a href="../../blog/index.html">Blog</a></li>
-            <li><a href="mailto:security@iclementine.com">Contact</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Resources</h5>
-          <ul>
-            <li><a href="../../integrations/epic/">Epic Integration</a></li>
-            <li><a href="mailto:security@iclementine.com">Security</a></li>
-          </ul>
-        </div>
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <span class="wordmark">
+          <span class="wordmark-icon"><img src="../../logo.png" alt="Clementine Health"></span>
+          Clementine Health
+        </span>
+        <p>&copy; 2026 Clementine Health, Inc. All rights reserved.</p>
       </div>
-      <div class="footer-bottom">
-        &copy; 2026 Clementine Health, Inc. All rights reserved.
+      <div class="footer-links">
+        <a href="../../index.html">Home</a>
+        <a href="../../blog/index.html">Blog</a>
+        <a href="../../integrations/epic/">Epic Integration</a>
+        <a href="mailto:security@iclementine.com">Contact</a>
       </div>
     </div>
   </footer>
